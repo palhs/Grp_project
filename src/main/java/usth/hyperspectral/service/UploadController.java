@@ -21,7 +21,7 @@ public class UploadController {
 
     @POST
 //    @PermitAll
-    @RolesAllowed("user")
+    @RolesAllowed({"user"})
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
@@ -32,7 +32,7 @@ public class UploadController {
     //Get all files
 
     @GET
-    @RolesAllowed("user")
+    @RolesAllowed({"user"})
     @Path("/get")
     @Produces(MediaType.APPLICATION_JSON)
     public List<FileInfo> getAllFiles() {
@@ -41,7 +41,7 @@ public class UploadController {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed("user")
+    @RolesAllowed({"user"})
     @Transactional
     public Response getFileById(@PathParam("id") String fileId) {
         FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();
