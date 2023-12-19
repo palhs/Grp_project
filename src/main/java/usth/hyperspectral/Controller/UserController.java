@@ -1,4 +1,4 @@
-package usth.hyperspectral.service;
+package usth.hyperspectral.Controller;
 
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -10,7 +10,9 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import usth.hyperspectral.resource.LoginResponse;
 import usth.hyperspectral.resource.Users;
+import usth.hyperspectral.service.JwtService;
 
 import java.net.URI;
 import java.util.List;
@@ -19,10 +21,12 @@ import java.util.Optional;
 
 @Path("/user")
 @ApplicationScoped
-public class UserService {
+public class UserController {
 
     @Inject
-    JwtService service;
+    JwtService jwtService;
+
+
 
     @GET
     @Path("/get")
@@ -105,19 +109,24 @@ public class UserService {
     @PermitAll
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response login(LoginRequest loginRequest) {
+    public Response login(Users loginRequest) {
         // Retrieve the user from the database based on the provided username
         Users user = Users.find("username", loginRequest.getUsername()).firstResult();
 
         // Check if the user exists and the password matches
         if (user != null && BcryptUtil.matches(loginRequest.getPassword(), user.getPassword())) {
-            if(Objects.equals(user.getRole(), "admin")) {
-                // Return the user's role
-                return Response.ok(service.generateAdminJwt()).build();
+            String jwtToken;
+            if (Objects.equals(user.getRole(), "admin")) {
+                // Generate admin JWT token
+                jwtToken = jwtService.generateAdminJwt();
+            } else {
+                // Generate user JWT token
+                jwtToken = jwtService.generateUserJwt();
             }
-            else{
-                return Response.ok(service.generateUserJwt()).build();
-            }
+
+            // Return the JWT token in a LoginResponse
+            LoginResponse loginResponse = new LoginResponse(jwtToken);
+            return Response.ok(loginResponse).build();
         } else {
             // Invalid credentials
             return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -127,28 +136,6 @@ public class UserService {
 
     // Additional classes for request/response
 
-    @RegisterForReflection
-    public static class LoginRequest {
-        private String username;
-        private String password;
 
-        // Getters and setters...
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-    }
 
 }

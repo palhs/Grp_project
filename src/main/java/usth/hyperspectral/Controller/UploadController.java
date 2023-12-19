@@ -1,4 +1,4 @@
-package usth.hyperspectral.service;
+package usth.hyperspectral.Controller;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import usth.hyperspectral.resource.FileInfo;
+import usth.hyperspectral.service.FileUploadService;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -32,8 +33,9 @@ public class UploadController {
     //Get all files
 
     @GET
-    @RolesAllowed({"user"})
+//    @RolesAllowed({"user"})
     @Path("/get")
+    @PermitAll
     @Produces(MediaType.APPLICATION_JSON)
     public List<FileInfo> getAllFiles() {
         return fileUploadService.getAllFiles();
@@ -41,7 +43,8 @@ public class UploadController {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"user"})
+    @PermitAll
+//    @RolesAllowed({"user"})
     @Transactional
     public Response getFileById(@PathParam("id") String fileId) {
         FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();

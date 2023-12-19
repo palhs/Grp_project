@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show Image by fileId</title>
+</head>
+<body>
+    <!-- Container to hold the image -->
+    <div id="imageContainer"></div>
+
+    <script>
+        // Function to fetch image data by fileId and display the image
+        function fetchImageByFileId(fileId) {
+            fetch(`http://localhost:8080/file/${fileId}`)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    // Create a Blob from the ArrayBuffer
+                    const blob = new Blob([buffer], { type: 'image/png' });
+
+                    // Create a Blob URL from the Blob
+                    const imageUrl = URL.createObjectURL(blob);
+                    console.log('Image URL:', imageUrl);
+                    // Create an Image element
+                    const imageElement = document.createElement("img");
+
+                    // Set the Image source
+                    imageElement.src = imageUrl;
+
+                    // Set other attributes if needed (e.g., alt text)
+                    imageElement.alt = "Image";
+
+                    // Get the container element
+                    const imageContainer = document.getElementById("imageContainer");
+
+                    // Append the Image to the container
+                    imageContainer.appendChild(imageElement);
+
+                    // Add an onload event listener to the image element
+                    imageElement.onload = function() {
+                        // Do something once the image has loaded (optional)
+                        console.log('Image loaded successfully!');
+                    };
+                })
+                .catch(error => console.error('Error fetching image:', error));
+        }
+
+        // Call the fetchImageByFileId function with a specific fileId (replace with a valid fileId)
+        fetchImageByFileId("fb15fdac-0a2d-4061-988a-3d9624c94deb");
+    </script>
+</body>
+</html>
