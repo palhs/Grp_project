@@ -15,25 +15,25 @@ public class JwtService {
         return System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(expiryMins);
     }
 
-    public String generateJwt(String role, int expiryMins){
+    public String generateJwt(String role, int expiryMins, Long userId){
         Set<String> roles = new HashSet<>(
                 Collections.singletonList(role)
         );
         return Jwt.issuer("panhandle")
-                .subject("")
+                .subject(userId.toString())
+                .claim("user_id", userId.toString())
                 .groups(roles)
                 // Smallrye expireAt() expect the time is in second format instead of milliseconds
                 .expiresAt(getExpiryTime(expiryMins)/1000)
                 .sign();
-
     }
 
-    public String generateAdminJwt(){
-        return generateJwt("admin",15);
+    public String generateAdminJwt(Long userId){
+        return generateJwt("admin",15, userId);
     }
 
-    public String generateUserJwt(){
-        return generateJwt("user",15);
+    public String generateUserJwt(Long userId){
+        return generateJwt("user",15, userId);
     }
 
 }

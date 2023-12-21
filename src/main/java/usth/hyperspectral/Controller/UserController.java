@@ -1,7 +1,6 @@
 package usth.hyperspectral.Controller;
 
 import io.quarkus.elytron.security.common.BcryptUtil;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,7 +10,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import usth.hyperspectral.resource.LoginResponse;
-import usth.hyperspectral.resource.Users;
+import usth.hyperspectral.Entity.Users;
 import usth.hyperspectral.service.JwtService;
 
 import java.net.URI;
@@ -112,16 +111,17 @@ public class UserController {
     public Response login(Users loginRequest) {
         // Retrieve the user from the database based on the provided username
         Users user = Users.find("username", loginRequest.getUsername()).firstResult();
+        Long userId = user.getUser_id();
 
         // Check if the user exists and the password matches
         if (user != null && BcryptUtil.matches(loginRequest.getPassword(), user.getPassword())) {
             String jwtToken;
             if (Objects.equals(user.getRole(), "admin")) {
                 // Generate admin JWT token
-                jwtToken = jwtService.generateAdminJwt();
+                jwtToken = jwtService.generateAdminJwt(userId);
             } else {
                 // Generate user JWT token
-                jwtToken = jwtService.generateUserJwt();
+                jwtToken = jwtService.generateUserJwt(userId);
             }
 
             // Return the JWT token in a LoginResponse

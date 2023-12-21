@@ -3,19 +3,22 @@ package usth.hyperspectral.service;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import usth.hyperspectral.resource.FileInfo;
+import jakarta.ws.rs.core.SecurityContext;
+import usth.hyperspectral.Entity.FileInfo;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
+import usth.hyperspectral.Entity.Users;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
@@ -31,9 +34,12 @@ public class FileUploadService {
 
     @ConfigProperty(name = "upload.directory")
     String UPLOAD_DIR;
+    @Inject
+    SecurityContext securityContext;
 
     @Transactional
     public String uploadFile(MultipartFormDataInput input) {
+
         List<String> fileIds = new ArrayList<>();
 
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
@@ -45,22 +51,33 @@ public class FileUploadService {
                 MultivaluedMap<String, String> header = inputPart.getHeaders();
                 String originalFileName = getFileName(header);
 
-                // Tạo ID duy nhất cho file
+                // Generate unique ID for file
                 String fileId = UUID.randomUUID().toString();
                 String uniqueFileName = fileId + "_" + originalFileName;
 
                 fileIds.add(fileId);
                 InputStream inputStream = inputPart.getBody(InputStream.class, null);
 
-                // Thay đổi phương thức ghi file để sử dụng uniqueFileName
+                // Write file with uniqueFileName
                 writeFile(inputStream, uniqueFileName);
 
-                // Lưu trữ đường dẫn của file
+                // Get user_id from JWT token
+                String userId = securityContext.getUserPrincipal().getName();
+
+                if (userId == null || userId.isEmpty()) {
+                    throw new WebApplicationException("User ID is missing in the JWT token", Response.Status.UNAUTHORIZED);
+                }
+
+                // Find the user in the database
+                Users user = Users.findById(Long.parseLong(userId));
+
+
+                // Store file path
                 String fileLocation = UPLOAD_DIR + File.separator + uniqueFileName;
                 fileLocations.add(fileLocation);
 
-                // Lưu thông tin vào cơ sở dữ liệu
-                saveFileToDatabase(fileId, UPLOAD_DIR + File.separator + uniqueFileName);
+                // Save file info to database
+                saveFileToDatabase(fileId, fileLocation, user);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -101,11 +118,12 @@ public class FileUploadService {
         return "";
     }
     @Transactional
-    public void saveFileToDatabase(String fileId, String fileLocation) {
+    public void saveFileToDatabase(String fileId, String fileLocation, Users user) {
         FileInfo fileInfo = new FileInfo();
         fileInfo.fileId = fileId;
         fileInfo.fileLocation = fileLocation;
-        fileInfo.uploadDateTime = LocalDateTime.now(); // Cập nhật ngày và giờ
+        fileInfo.uploadDateTime = LocalDateTime.now(); // Update date and time
+        fileInfo.setUser(user); // Set the user who uploaded the file
         fileInfo.persist();
     }
     @Transactional

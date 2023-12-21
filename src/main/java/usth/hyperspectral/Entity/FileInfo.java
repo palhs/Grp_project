@@ -1,28 +1,40 @@
-package usth.hyperspectral.resource;
+package usth.hyperspectral.Entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 public class FileInfo extends PanacheEntity {
 
+    @Column(name = "file_id", unique = true)
     public String fileId;
+    @Column(name = "file_location")
     public String fileLocation;
+    @Column(name = "upload_date_time")
     public LocalDateTime uploadDateTime;
 
-    public FileInfo(String fileId, String fileLocation) {
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
+
+    public FileInfo(String fileId, String fileLocation, Users user) {
         this.fileId = fileId;
         this.fileLocation = fileLocation;
         this.uploadDateTime = LocalDateTime.now();
+        this.user = user;
     }
 
     public FileInfo() {
 
+    }
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
+        this.user = user;
     }
 
     public String getFileId() {

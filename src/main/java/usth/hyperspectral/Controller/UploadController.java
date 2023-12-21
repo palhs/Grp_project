@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import usth.hyperspectral.resource.FileInfo;
+import usth.hyperspectral.Entity.FileInfo;
 import usth.hyperspectral.service.FileUploadService;
 
 import java.nio.file.Paths;
