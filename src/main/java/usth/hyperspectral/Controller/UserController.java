@@ -1,14 +1,18 @@
 package usth.hyperspectral.Controller;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import usth.hyperspectral.resource.LoginResponse;
 import usth.hyperspectral.Entity.Users;
 import usth.hyperspectral.service.JwtService;
@@ -29,7 +33,7 @@ public class UserController {
 
     @GET
     @Path("/get")
-    @PermitAll
+    @RolesAllowed({"admin"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllUser(){
         List<Users> usersList = Users.listAll();
@@ -43,6 +47,11 @@ public class UserController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addUser(Users user){
+        if(isUsernameDuplicate(user.getUsername())){
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Username already exists. Choose a different username.")
+                    .build();
+        }
         user.setPassword(BcryptUtil.bcryptHash(user.getPassword()));
         Users.persist(user);
         if(user.isPersistent()){
@@ -53,7 +62,7 @@ public class UserController {
     }
 
     @GET
-    @RolesAllowed({"admin","user"})
+    @RolesAllowed({"admin"})
     @Path("/get/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response findUser(@PathParam("id") Long user_id){
@@ -62,29 +71,28 @@ public class UserController {
     }
 
     @PUT
-    @RolesAllowed({"admin","user"})
+    @RolesAllowed({"user"})
     @Transactional
     @Path("/put/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateUser(@PathParam("id") Long user_id ){
-        Optional<Users> optionalUsers = Users.findByIdOptional(user_id);
-        if(optionalUsers.isPresent()){
-            Users dbUser = optionalUsers.get();
+    public Response updateUser(@PathParam("id") Long user_id, Users updatedUser) {
+        Users existingUser = Users.findById(user_id);
 
-            if(Objects.nonNull(dbUser.getPassword())){
-                dbUser.setPassword(dbUser.getPassword());
+        if (existingUser != null) {
+            // Update only the relevant fields, e.g., password
+            if (Objects.nonNull(updatedUser.getPassword())) {
+                existingUser.setPassword(BcryptUtil.bcryptHash(updatedUser.getPassword()));
             }
+            existingUser.persist();
 
-            dbUser.persist();
-            if(dbUser.isPersistent()){
+            if (existingUser.isPersistent()) {
                 return Response.created(URI.create("/user/" + user_id)).build();
-            }else{
+            } else {
                 return Response.status(Response.Status.BAD_REQUEST).build();
             }
-        }
-        else {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
 
@@ -96,7 +104,9 @@ public class UserController {
     public Response deleteUser(@PathParam("id") Long id){
         boolean isDeleted = Users.deleteById(id);
         if (isDeleted){
-            return Response.noContent().build();
+            return Response.ok()
+                            .entity("User with id " + id + " deleted successfully")
+                            .build();
         }
         else {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -134,7 +144,17 @@ public class UserController {
     }
 
 
-    // Additional classes for request/response
+    // Helper method to check if the username already exists
+    private boolean isUsernameDuplicate(String username) {
+        try {
+            // Query the database for the username
+            Users existingUser = Users.find("username", username).firstResult();
+            return existingUser != null;
+        } catch (NoResultException e) {
+            // No user found with the given username, not a duplicate
+            return false;
+        }
+    }
 
 
 
