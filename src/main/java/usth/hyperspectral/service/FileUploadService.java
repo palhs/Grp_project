@@ -131,6 +131,17 @@ public class FileUploadService {
         return entityManager.createQuery("SELECT f FROM FileInfo f", FileInfo.class).getResultList();
     }
 
+    @Transactional
+    public boolean DeleteFileById(String fileId) {
+        FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();
+        if (fileInfo != null) {
+            entityManager.remove(fileInfo);
+            return true;
+        }
+        return false;
+    }
+
+
 //    @Transactional
 //    public Response getFileById(String fileId){
 //        FileInfo file = FileInfo.find("fileId",fileId).firstResult();

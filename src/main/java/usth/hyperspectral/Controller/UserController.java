@@ -10,8 +10,10 @@ import jakarta.json.Json;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import usth.hyperspectral.resource.LoginResponse;
 import usth.hyperspectral.Entity.Users;
@@ -53,9 +55,12 @@ public class UserController {
                     .build();
         }
         user.setPassword(BcryptUtil.bcryptHash(user.getPassword()));
+        user.setRole("user");
         Users.persist(user);
         if(user.isPersistent()){
-            return Response.created(URI.create("/user/" + user.user_id)).build();
+            return Response.created(URI.create("/user/" + user.user_id))
+                    .entity("User created successfully")
+                    .build();
         }else {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -73,10 +78,11 @@ public class UserController {
     @PUT
     @RolesAllowed({"user"})
     @Transactional
-    @Path("/put/{id}")
+    @Path("/put/password")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateUser(@PathParam("id") Long user_id, Users updatedUser) {
+    public Response updateUser(@Context SecurityContext securityContext, Users updatedUser) {
+        Long user_id = Long.parseLong(securityContext.getUserPrincipal().getName());
         Users existingUser = Users.findById(user_id);
 
         if (existingUser != null) {
@@ -87,7 +93,9 @@ public class UserController {
             existingUser.persist();
 
             if (existingUser.isPersistent()) {
-                return Response.created(URI.create("/user/" + user_id)).build();
+                return Response.created(URI.create("/user/" + user_id))
+                        .entity("User's password updated successfully")
+                        .build();
             } else {
                 return Response.status(Response.Status.BAD_REQUEST).build();
             }

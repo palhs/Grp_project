@@ -29,11 +29,11 @@ public class JwtService {
     }
 
     public String generateAdminJwt(Long userId){
-        return generateJwt("admin",15, userId);
+        return generateJwt("admin",180, userId);
     }
 
     public String generateUserJwt(Long userId){
-        return generateJwt("user",15, userId);
+        return generateJwt("user",180, userId);
     }
 
 }

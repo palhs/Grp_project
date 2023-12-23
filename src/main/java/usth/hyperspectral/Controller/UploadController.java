@@ -5,8 +5,10 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import usth.hyperspectral.Entity.FileInfo;
@@ -40,11 +42,12 @@ public class UploadController {
 
    //Get files information by user_id
     @GET
-    @Path("/get/{user_id}")
+    @Path("/get/u")
     @RolesAllowed({"user"})
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response getFilesByUserId(@PathParam("user_id") Long user_id) {
+    public Response getFilesByUserId(@Context SecurityContext securityContext) {
+        Long user_id = Long.parseLong(securityContext.getUserPrincipal().getName());
         List<FileInfo> fileInfoList = FileInfo.find("user.id", user_id).list();
         if (fileInfoList != null) {
             return Response.ok(fileInfoList).build();
@@ -55,16 +58,41 @@ public class UploadController {
 
    // Get file by fileId
     @GET
-    @Path("/get/{user_id}/{fileId}")
+    @Path("/get/u/{fileId}")
     @RolesAllowed({"user"})
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Transactional
-    public Response getFileById(@PathParam("fileId") String fileId, @PathParam("user_id") Long user_id) {
+    public Response getFileById(@PathParam("fileId") String fileId, @Context SecurityContext securityContext) {
         FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();
-
-        if (fileInfo != null) {
+        Long user_id = Long.parseLong(securityContext.getUserPrincipal().getName());
+        if (fileInfo != null && fileInfo.getUser().getUser_id().equals(user_id)) {
             java.nio.file.Path fileLocation = Paths.get(fileInfo.getFileLocation());
             // Do something with fileLocation
             return Response.ok(fileLocation.toFile()).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    // Delete file by fileId
+    @DELETE
+    @Path("/delete/u/{fileId}")
+    @RolesAllowed({"admin","user"})
+    @Transactional
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteFileById(@PathParam("fileId") String fileId, @Context SecurityContext securityContext) {
+        FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();
+        Long user_id = Long.parseLong(securityContext.getUserPrincipal().getName());
+
+        if (fileInfo != null && fileInfo.getUser().getUser_id().equals(user_id)) {
+            boolean isDeleted = fileUploadService.DeleteFileById(fileId);
+            if (isDeleted) {
+                return Response.ok()
+                        .entity("File with id " + fileId + " deleted successfully")
+                        .build();
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
