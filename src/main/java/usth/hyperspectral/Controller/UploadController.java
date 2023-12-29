@@ -28,13 +28,16 @@ public class UploadController {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
     public Response fileUpload(@MultipartForm MultipartFormDataInput input) {
-        return Response.ok().entity(fileUploadService.uploadFile(input)).build();
+        String imgUploadResult = fileUploadService.uploadImg(input);
+        String hdrUploadResult = fileUploadService.uploadHDR(input);
+        return Response.ok().entity(imgUploadResult + "\n" + hdrUploadResult).build();
     }
+
 
     //Get all files information
     @GET
     @Path("/get")
-    @RolesAllowed({"admin"})
+    @RolesAllowed({"user,admin"})
     @Produces(MediaType.APPLICATION_JSON)
     public List<FileInfo> getAllFiles() {
         return fileUploadService.getAllFiles();

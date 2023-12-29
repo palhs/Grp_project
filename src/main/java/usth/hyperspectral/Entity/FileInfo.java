@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 @Entity
 public class FileInfo extends PanacheEntity {
 
+    @Column(name = "file_name", unique = true)
+    public String fileName;
+
     @Column(name = "file_id", unique = true)
     public String fileId;
     @Column(name = "file_location")
@@ -19,16 +22,27 @@ public class FileInfo extends PanacheEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    public FileInfo(String fileId, String fileLocation, Users user) {
+    public FileInfo(String fileName, String fileId, String fileLocation, LocalDateTime uploadDateTime, Users user) {
+        this.fileName = fileName;
         this.fileId = fileId;
         this.fileLocation = fileLocation;
-        this.uploadDateTime = LocalDateTime.now();
+        this.uploadDateTime = uploadDateTime;
         this.user = user;
     }
+
 
     public FileInfo() {
 
     }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
     public Users getUser() {
         return user;
     }
