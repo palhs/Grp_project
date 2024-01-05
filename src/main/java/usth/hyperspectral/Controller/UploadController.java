@@ -24,6 +24,7 @@ public class UploadController {
 
     @POST
     @RolesAllowed({"user"})
+
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
