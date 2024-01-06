@@ -24,7 +24,6 @@ public class UploadController {
 
     @POST
     @RolesAllowed({"user"})
-
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.TEXT_PLAIN)
@@ -38,7 +37,7 @@ public class UploadController {
     //Get all files information
     @GET
     @Path("/get")
-    @RolesAllowed({"user,admin"})
+    @RolesAllowed({"admin"})
     @Produces(MediaType.APPLICATION_JSON)
     public List<FileInfo> getAllFiles() {
         return fileUploadService.getAllFiles();

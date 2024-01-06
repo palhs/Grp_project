@@ -1,52 +1,31 @@
 package usth.hyperspectral.Entity;
 
-public class Post {
-    private String userId;
-    private String id;
-    private String body;
-    private String title;
+public class Preview {
+    private String img_path;
+    private String hdr_path;
 
-    public String getUserId() {
-        return userId;
+    // Default constructor
+    public Preview() {
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public String getImg_path() {
+        return img_path;
     }
 
-    public String getId() {
-        return id;
+    public void setImg_path(String img_path) {
+        this.img_path = img_path;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getHdr_path() {
+        return hdr_path;
     }
 
-    public String getBody() {
-        return body;
+    public void setHdr_path(String hdr_path) {
+        this.hdr_path = hdr_path;
     }
 
-    public void setBody(String body) {
-        this.body = body;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public Post() {
-    }
-
-    public Post(String userId,
-                String id, String body, String title) {
-        this.userId = userId;
-        this.id = id;
-        this.body = body;
-        this.title = title;
+    public Preview(String img_path, String hdr_path) {
+        this.img_path = img_path;
+        this.hdr_path = hdr_path;
     }
 }
-
