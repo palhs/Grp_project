@@ -1,5 +1,6 @@
 package usth.hyperspectral.resource;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -14,14 +15,14 @@ import usth.hyperspectral.Entity.Preview;
 import usth.hyperspectral.Entity.PreviewResponse;
 import usth.hyperspectral.service.PredictService;
 
-@Path("/predict")
+@ApplicationScoped
 public class PredictResource {
 
     @Inject
     @RestClient
     PredictService predictService;
 
-    @POST
+
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addPredict(Predict predict) {
@@ -34,7 +35,11 @@ public class PredictResource {
                 // Extract and return the JSON response from the external API
                 PredictResponse predictResponse = externalApiResponse.readEntity(PredictResponse.class);
                 String demoPredictPath = predictResponse.getDemo_predict_path();
-                return Response.status(Response.Status.CREATED).entity(predictResponse).build();
+
+                java.nio.file.Path fileLocation = java.nio.file.Paths.get(demoPredictPath);
+                java.io.File file = fileLocation.toFile();
+
+                return Response.ok(file).build();
 
             } else {
                 // Handle non-successful responses from the external API

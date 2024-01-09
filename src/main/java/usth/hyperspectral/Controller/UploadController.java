@@ -12,6 +12,10 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import usth.hyperspectral.Entity.FileInfo;
+import usth.hyperspectral.Entity.Predict;
+import usth.hyperspectral.Entity.Preview;
+import usth.hyperspectral.resource.PredictResource;
+import usth.hyperspectral.resource.PreviewResource;
 import usth.hyperspectral.service.FileUploadService;
 
 import java.nio.file.Paths;
@@ -21,6 +25,12 @@ import java.util.List;
 public class UploadController {
     @Inject
     FileUploadService fileUploadService;
+
+    @Inject
+    PreviewResource previewResource;
+
+    @Inject
+    PredictResource predictResource;
 
     @POST
     @RolesAllowed({"user"})
@@ -99,5 +109,21 @@ public class UploadController {
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @POST
+    @Path("/preview")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addPreview(Preview preview) {
+        return previewResource.addPreview(preview);
+    }
+
+    @POST
+    @Path("/predict")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addPredict(Predict predict) {
+        return predictResource.addPredict(predict);
     }
 }
