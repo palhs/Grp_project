@@ -223,7 +223,7 @@ public class FileUploadService {
 //        FileInfo file = FileInfo.find("fileId",fileId).firstResult();
 //        String fileLocation = entityManager.createQuery("SELECT fileLocation FROM FileInfo WHERE fileId = file.fileId ");
 //    }
-
+//
 //    @Transactional
 //    public Response getFileById(String fileId) {
 //        FileInfo fileInfo = FileInfo.find("fileId", fileId).firstResult();

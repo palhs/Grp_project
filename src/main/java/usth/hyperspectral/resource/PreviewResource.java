@@ -1,5 +1,6 @@
 package usth.hyperspectral.resource;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,13 +10,12 @@ import usth.hyperspectral.Entity.Preview;
 import usth.hyperspectral.service.PreviewService;
 import usth.hyperspectral.Entity.PreviewResponse;
 
-@Path("/preview")
+@ApplicationScoped
 public class PreviewResource {
     @Inject
     @RestClient
     PreviewService previewService;
 
-    @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addPreview(Preview preview) {
@@ -28,7 +28,11 @@ public class PreviewResource {
                 // Extract and return the JSON response from the external API
                 PreviewResponse previewResponse = externalApiResponse.readEntity(PreviewResponse.class);
                 String demoPreviewPath = previewResponse.getDemo_preview_path();
-                return Response.status(Response.Status.CREATED).entity(previewResponse).build();
+
+                java.nio.file.Path fileLocation = java.nio.file.Paths.get(demoPreviewPath);
+                java.io.File file = fileLocation.toFile();
+
+                return Response.ok(file).build();
 
             } else {
                 // Handle non-successful responses from the external API
