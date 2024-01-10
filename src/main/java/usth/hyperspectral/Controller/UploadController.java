@@ -112,6 +112,7 @@ public class UploadController {
     }
 
     @POST
+    @RolesAllowed({"user"})
     @Path("/preview")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -120,6 +121,7 @@ public class UploadController {
     }
 
     @POST
+    @RolesAllowed({"user"})
     @Path("/predict")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

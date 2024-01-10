@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 public class FileInfo extends PanacheEntity {
 
-    @Column(name = "file_name", unique = true)
+    @Column(name = "file_name")
     public String fileName;
 
     @Column(name = "file_id", unique = true)

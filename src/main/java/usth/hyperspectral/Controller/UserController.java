@@ -100,16 +100,17 @@ public class UserController {
         // Retrieve the user from the database based on the provided username
         Users user = Users.find("username", loginRequest.getUsername()).firstResult();
         Long userId = user.getUser_id();
+        String username = user.getUsername();
 
         // Check if the user exists and the password matches
         if (user != null && BcryptUtil.matches(loginRequest.getPassword(), user.getPassword())) {
             String jwtToken;
             if (Objects.equals(user.getRole(), "admin")) {
                 // Generate admin JWT token
-                jwtToken = jwtService.generateAdminJwt(userId);
+                jwtToken = jwtService.generateAdminJwt(userId,username);
             } else {
                 // Generate user JWT token
-                jwtToken = jwtService.generateUserJwt(userId);
+                jwtToken = jwtService.generateUserJwt(userId,username);
             }
 
             // Return the JWT token in a LoginResponse
