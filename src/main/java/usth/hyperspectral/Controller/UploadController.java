@@ -39,8 +39,18 @@ public class UploadController {
     @Produces(MediaType.TEXT_PLAIN)
     public Response fileUpload(@MultipartForm MultipartFormDataInput input) {
         try{
-            String imgUploadResult = fileUploadService.uploadImg(input);
-            String hdrUploadResult = fileUploadService.uploadHDR(input);
+            Response imgUploadResponse = fileUploadService.uploadImg(input);
+            if (imgUploadResponse.getStatus() != Response.Status.OK.getStatusCode()) {
+                return imgUploadResponse;
+            }
+            String imgUploadResult = (String) imgUploadResponse.getEntity();
+
+            Response hdrUploadResponse = fileUploadService.uploadHDR(input);
+            if (hdrUploadResponse.getStatus() != Response.Status.OK.getStatusCode()) {
+                return hdrUploadResponse;
+            }
+            String hdrUploadResult = (String) hdrUploadResponse.getEntity();
+
             return Response.ok().entity(imgUploadResult + "\n" + hdrUploadResult).build();
         }catch (Exception e){
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
