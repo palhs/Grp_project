@@ -337,12 +337,16 @@ public class FileUploadService {
     private void writeFile(InputStream inputStream, String fileName) throws IOException {
         File customDir = new File(UPLOAD_DIR);
         fileName = customDir.getAbsolutePath() + File.separator + fileName;
-        try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName), StandardOpenOption.CREATE_NEW)) {
+        try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             byte[] buffer = new byte[1024 * 1024]; // Buffer size of 1MB
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
+        } catch (IOException e) {
+            // Handle IOException appropriately
+            e.printStackTrace(); // Example: Print the stack trace for debugging
+            throw e; // Rethrow the exception or handle it based on your requirements
         }
     }
 
