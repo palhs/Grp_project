@@ -1,6 +1,6 @@
 package usth.hyperspectral.Entity;
 
-public class PreviewResponse {
+public class    PreviewResponse {
     private String demo_preview_path;
 
     public String getDemo_preview_path() {

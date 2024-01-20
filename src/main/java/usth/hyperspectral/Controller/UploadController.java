@@ -3,6 +3,7 @@ package usth.hyperspectral.Controller;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -32,32 +33,17 @@ public class UploadController {
     @Inject
     PredictResource predictResource;
 
-    @POST
-    @RolesAllowed({"user"})
-    @Path("/upload")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response fileUpload(@MultipartForm MultipartFormDataInput input) {
-        try{
-            Response imgUploadResponse = fileUploadService.uploadImg(input);
-            if (imgUploadResponse.getStatus() != Response.Status.OK.getStatusCode()) {
-                return imgUploadResponse;
-            }
-            String imgUploadResult = (String) imgUploadResponse.getEntity();
-
-            Response hdrUploadResponse = fileUploadService.uploadHDR(input);
-            if (hdrUploadResponse.getStatus() != Response.Status.OK.getStatusCode()) {
-                return hdrUploadResponse;
-            }
-            String hdrUploadResult = (String) hdrUploadResponse.getEntity();
-
+        @POST
+        @RolesAllowed({"user"})
+        @Path("/upload")
+    //    @PermitAll
+        @Consumes(MediaType.MULTIPART_FORM_DATA)
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response fileUpload(@MultipartForm MultipartFormDataInput input) {
+            String imgUploadResult = fileUploadService.uploadImg(input);
+            String hdrUploadResult = fileUploadService.uploadHDR(input);
             return Response.ok().entity(imgUploadResult + "\n" + hdrUploadResult).build();
-        }catch (Exception e){
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Error processing the request: " + e.getMessage())
-                    .build();
         }
-    }
 
 
     //Get all files information
