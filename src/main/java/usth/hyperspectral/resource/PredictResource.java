@@ -28,7 +28,7 @@ public class PredictResource {
 
 
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response addPredict(Predict predict) {
         try {
             // Call the external POST API using the injected previewService
@@ -57,7 +57,7 @@ public class PredictResource {
 
                 // Generate unique ID for file
                 String fileId = UUID.randomUUID().toString();
-                String uniqueFileName = fileId + "_" + fileName;
+
 
                 // Get user_id from JWT token
                 String userId = securityContext.getUserPrincipal().getName();
@@ -69,8 +69,7 @@ public class PredictResource {
                 // Find the user in the database
                 Users user = Users.findById(Long.parseLong(userId));
 
-                fileUploadService.saveFileToDatabase(fileId, fileLocationString, uniqueFileName, user);
-
+                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user);
 
                 return Response.ok(file).build();
 

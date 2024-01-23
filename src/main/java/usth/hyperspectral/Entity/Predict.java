@@ -3,10 +3,10 @@ package usth.hyperspectral.Entity;
 public class Predict {
     private String img_path;
     private String hdr_path;
-    private String x;
-    private String y;
+    private Double x;
+    private Double y;
 
-    public Predict(String img_path, String hdr_path, String x, String y) {
+    public Predict(String img_path, String hdr_path, Double x, Double y) {
         this.img_path = img_path;
         this.hdr_path = hdr_path;
         this.x = x;
@@ -31,19 +31,19 @@ public class Predict {
         this.hdr_path = hdr_path;
     }
 
-    public String getX() {
+    public double getX() {
         return x;
     }
 
-    public void setX(String x) {
+    public void setX(Double x) {
         this.x = x;
     }
 
-    public String getY() {
+    public double getY() {
         return y;
     }
 
-    public void setY(String y) {
+    public void setY(Double y) {
         this.y = y;
     }
 }

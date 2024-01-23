@@ -1,5 +1,6 @@
 package usth.hyperspectral.service;
 
+import io.quarkus.panache.common.Parameters;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -14,11 +15,10 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
 import usth.hyperspectral.Entity.Users;
+import jakarta.servlet.annotation.MultipartConfig;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Singleton
 public class FileUploadService {
@@ -53,10 +55,10 @@ public class FileUploadService {
 //                MultivaluedMap<String, String> header = inputPart.getHeaders();
 //                String originalFileName = getFileName(header);
 //
-//                // Check if a file with the same name already exists in the database
-//                if (checkFileName(originalFileName)) {
-//                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
-//                }
+////                // Check if a file with the same name already exists in the database
+////                if (checkFileName(originalFileName)) {
+////                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
+////                }
 //
 //                // Generate unique ID for file
 //                String fileId = UUID.randomUUID().toString();
@@ -65,10 +67,10 @@ public class FileUploadService {
 //                fileIds.add(fileId);
 //                fileNames.add(originalFileName); // Add original file name to the list
 //
-//                InputStream inputStream = inputPart.getBody(InputStream.class, null);
-//
-//                // Write file with uniqueFileName
-//                writeFile(inputStream, uniqueFileName);
+//                try(InputStream inputStream = inputPart.getBody(InputStream.class, null)) {
+//                    // Write file with uniqueFileName
+//                    writeFile(inputStream, uniqueFileName);
+//                }
 //
 //                // Get user_id from JWT token
 //                String userId = securityContext.getUserPrincipal().getName();
@@ -118,27 +120,11 @@ public class FileUploadService {
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("img");
         List<String> fileLocations = new ArrayList<>();
-
         for (InputPart inputPart : inputParts) {
             try {
                 MultivaluedMap<String, String> header = inputPart.getHeaders();
                 String originalFileName = getFileName(header);
 
-                // Check if a file with the same name already exists in the database
-                if (checkFileName(originalFileName)) {
-                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
-                }
-
-                // Generate unique ID for file
-                String fileId = UUID.randomUUID().toString();
-
-                fileIds.add(fileId);
-                fileNames.add(originalFileName); // Add original file name to the list
-
-                InputStream inputStream = inputPart.getBody(InputStream.class, null);
-
-                // Write file with uniqueFileName
-                writeFile(inputStream, originalFileName);
 
                 // Get user_id from JWT token
                 String userId = securityContext.getUserPrincipal().getName();
@@ -147,11 +133,33 @@ public class FileUploadService {
                     throw new WebApplicationException("User ID is missing in the JWT token", Response.Status.UNAUTHORIZED);
                 }
 
+                // Check if a file with the same name already exists in the database
+//                if (checkFileName(originalFileName, Long.parseLong(userId))) {
+//                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
+//                }
+
+                // Generate unique ID for file
+                String fileId = UUID.randomUUID().toString();
+                String uniqueFileName = fileId + "_" + originalFileName;
+
+                fileIds.add(fileId);
+                fileNames.add(originalFileName); // Add original file name to the list
+
+                try (InputStream inputStream = new BufferedInputStream(inputPart.getBody(InputStream.class, null))) {
+                    // Check if the file is a zip file and unzip it
+                    if (originalFileName.endsWith(".zip")) {
+                        unzipAndProcessFiles(inputStream, fileId);
+                    } else {
+                        // Write file with originalFileName
+                        writeFile(inputStream, uniqueFileName);
+                    }
+                }
+
                 // Find the user in the database
                 Users user = Users.findById(Long.parseLong(userId));
 
                 // Store file path
-                String fileLocation = UPLOAD_DIR + File.separator + originalFileName;
+                String fileLocation = Paths.get(UPLOAD_DIR, uniqueFileName).toAbsolutePath().toString();
                 fileLocations.add(fileLocation);
 
                 // Save file info to database
@@ -201,10 +209,10 @@ public class FileUploadService {
 //                MultivaluedMap<String, String> header = inputPart.getHeaders();
 //                String originalFileName = getFileName(header);
 //
-//                // Check if a file with the same name already exists in the database
-//                if (checkFileName(originalFileName)) {
-//                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
-//                }
+////                // Check if a file with the same name already exists in the database
+////                if (checkFileName(originalFileName)) {
+////                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
+////                }
 //
 //                // Generate unique ID for file
 //                String fileId = UUID.randomUUID().toString();
@@ -213,10 +221,11 @@ public class FileUploadService {
 //                fileIds.add(fileId);
 //                fileNames.add(originalFileName); // Add original file name to the list
 //
-//                InputStream inputStream = inputPart.getBody(InputStream.class, null);
+//                try(InputStream inputStream = inputPart.getBody(InputStream.class, null)) {
+//                    // Write file with uniqueFileName
+//                    writeFile(inputStream, uniqueFileName);
 //
-//                // Write file with uniqueFileName
-//                writeFile(inputStream, uniqueFileName);
+//                }
 //
 //                // Get user_id from JWT token
 //                String userId = securityContext.getUserPrincipal().getName();
@@ -240,7 +249,7 @@ public class FileUploadService {
 //            }
 //        }
 //        StringBuilder resultBuilder = new StringBuilder();
-//        resultBuilder.append(fileIds.size()).append(" Image Uploaded. IDs: ").append(fileIds);
+//        resultBuilder.append(fileIds.size()).append(" HDR Uploaded. IDs: ").append(fileIds);
 //
 //        // Append file names to the result
 //        resultBuilder.append("\nFile Names:\n");
@@ -272,22 +281,6 @@ public class FileUploadService {
                 MultivaluedMap<String, String> header = inputPart.getHeaders();
                 String originalFileName = getFileName(header);
 
-                // Check if a file with the same name already exists in the database
-                if (checkFileName(originalFileName)) {
-                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
-                }
-
-                // Generate unique ID for file
-                String fileId = UUID.randomUUID().toString();
-
-                fileIds.add(fileId);
-                fileNames.add(originalFileName); // Add original file name to the list
-
-                InputStream inputStream = inputPart.getBody(InputStream.class, null);
-
-                // Write file with uniqueFileName
-                writeFile(inputStream, originalFileName);
-
                 // Get user_id from JWT token
                 String userId = securityContext.getUserPrincipal().getName();
 
@@ -295,11 +288,33 @@ public class FileUploadService {
                     throw new WebApplicationException("User ID is missing in the JWT token", Response.Status.UNAUTHORIZED);
                 }
 
+                // Check if a file with the same name already exists in the database
+//                if (checkFileName(originalFileName, Long.parseLong(userId))) {
+//                    throw new WebApplicationException("A file with the same name already exists", Response.Status.CONFLICT);
+//                }
+
+                // Generate unique ID for file
+                String fileId = UUID.randomUUID().toString();
+                String uniqueFileName = fileId + "_" + originalFileName;
+
+                fileIds.add(fileId);
+                fileNames.add(originalFileName); // Add original file name to the list
+
+                try (InputStream inputStream = new BufferedInputStream(inputPart.getBody(InputStream.class, null))) {
+                    // Check if the file is a zip file and unzip it
+                    if (originalFileName.endsWith(".zip")) {
+                        unzipAndProcessFiles(inputStream, fileId);
+                    } else {
+                        // Write file with originalFileName
+                        writeFile(inputStream, uniqueFileName);
+                    }
+                }
+
                 // Find the user in the database
                 Users user = Users.findById(Long.parseLong(userId));
 
                 // Store file path
-                String fileLocation = UPLOAD_DIR + File.separator + originalFileName;
+                String fileLocation = Paths.get(UPLOAD_DIR, originalFileName).toAbsolutePath().toString();
                 fileLocations.add(fileLocation);
 
                 // Save file info to database
@@ -334,21 +349,67 @@ public class FileUploadService {
         return Response.ok(resultBuilder.toString()).build();
     }
 
+//    private void writeFile(InputStream inputStream, String fileName) throws IOException {
+//        File customDir = new File(UPLOAD_DIR);
+//        fileName = customDir.getAbsolutePath() + File.separator + fileName;
+//        try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+//            byte[] buffer = new byte[1024 * 1024]; // Buffer size of 1MB
+//            int bytesRead;
+//            while ((bytesRead = inputStream.read(buffer)) != -1) {
+//                outputStream.write(buffer, 0, bytesRead);
+//            }
+//        } catch (IOException e) {
+//            // Handle IOException appropriately
+//            e.printStackTrace(); // Example: Print the stack trace for debugging
+//            throw e; // Rethrow the exception or handle it based on your requirements
+//        }
+//        finally{
+//            if(inputStream != null){
+//                try{
+//                    inputStream.close();
+//                } catch (IOException e){
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
+
     private void writeFile(InputStream inputStream, String fileName) throws IOException {
         File customDir = new File(UPLOAD_DIR);
-        fileName = customDir.getAbsolutePath() + File.separator + fileName;
-        try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            byte[] buffer = new byte[1024 * 1024]; // Buffer size of 1MB
+        File file = new File(customDir, fileName);
+
+        int count = 1;
+        while (file.exists()){
+            // Extract the name and extension of the file
+            int dotIndex = fileName.lastIndexOf('.');
+            String name = fileName.substring(0, dotIndex);
+            String extension = fileName.substring(dotIndex);
+
+            // Append a suffix to the fileName
+            String newFileName = name + "(" + count + ")" + extension;
+            file = new File(customDir,newFileName);
+            count++;
+        }
+
+        byte[] buffer = null;
+        try (OutputStream outputStream = Files.newOutputStream(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+             InputStream in = new BufferedInputStream(inputStream)) {
+            buffer = new byte[8 * 1024 * 1024];
             int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
+            while ((bytesRead = in.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
         } catch (IOException e) {
             // Handle IOException appropriately
             e.printStackTrace(); // Example: Print the stack trace for debugging
             throw e; // Rethrow the exception or handle it based on your requirements
+        } finally {
+            buffer = null;
+            System.gc();
         }
     }
+
+
 
     private String getFileName(MultivaluedMap<String, String> header) {
         String[] contentDisposition = header.
@@ -362,15 +423,21 @@ public class FileUploadService {
         }
         return "";
     }
+
     @Transactional
     public void saveFileToDatabase(String fileId, String fileLocation, String fileName,Users user) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.fileId = fileId;
-        fileInfo.fileLocation = fileLocation;
-        fileInfo.fileName = fileName;
-        fileInfo.uploadDateTime = LocalDateTime.now(); // Update date and time
-        fileInfo.setUser(user); // Set the user who uploaded the file
-        fileInfo.persist();
+        try {
+            FileInfo fileInfo = new FileInfo();
+            fileInfo.fileId = fileId;
+            fileInfo.fileLocation = fileLocation;
+            fileInfo.fileName = fileName;
+            fileInfo.uploadDateTime = LocalDateTime.now(); // Update date and time
+            fileInfo.setUser(user); // Set the user who uploaded the file
+            fileInfo.persist();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
     @Transactional
     public List<FileInfo> getAllFiles() {
@@ -388,15 +455,65 @@ public class FileUploadService {
     }
 
     @Transactional
-    public boolean checkFileName(String fileName) {
+    public boolean checkFileName(String fileName, Long user_id) {
         // Query the database to find a file with the given name
-        FileInfo fileInfo = FileInfo.find("fileName", fileName).firstResult();
+        FileInfo fileInfo = FileInfo.find("fileName = :fileName and user_id = :user_id", Parameters.with("fileName", fileName).and("user_id", user_id)).firstResult();
 
         // If fileInfo is not null, a file with the given name exists in the database
         return fileInfo != null;
     }
 
+//    private void unzipAndProcessFiles(InputStream zipInputStream, String fileId) throws IOException {
+//        try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
+//            ZipEntry zipEntry;
+//            byte[] buffer = new byte[8 * 1024 * 1024]; // 1MB buffer (adjust as needed)
+//
+//            while ((zipEntry = zis.getNextEntry()) != null) {
+//                String entryName = zipEntry.getName();
+//                String uniqueFileName = fileId + "_" + entryName;
+//
+//                // Process each entry in a streaming fashion
+//                try (OutputStream bos = Files.newOutputStream(Paths.get(UPLOAD_DIR, uniqueFileName),
+//                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+//
+//                    int bytesRead;
+//                    while ((bytesRead = zis.read(buffer)) != -1) {
+//                        bos.write(buffer, 0, bytesRead);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
+
+    private synchronized void unzipAndProcessFiles(InputStream zipInputStream, String fileId) throws IOException {
+        byte[] buffer = null;
+        try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
+            ZipEntry zipEntry;
+            buffer = new byte[8 * 1024 * 1024];
+
+            while ((zipEntry = zis.getNextEntry()) != null) {
+                String entryName = zipEntry.getName();
+                String uniqueFileName = fileId + "_" + entryName;
+
+                // Process each entry in a streaming fashion
+                try (OutputStream bos = Files.newOutputStream(Paths.get(UPLOAD_DIR, uniqueFileName),
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+
+                    int bytesRead;
+                    while ((bytesRead = zis.read(buffer)) != -1) {
+                        bos.write(buffer, 0, bytesRead);
+                    }
+                } zis.closeEntry();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new WebApplicationException("Error processing zip file: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            buffer = null;
+            System.gc();
+    }
+    }
 //    @Transactional
 //    public Response getFileById(String fileId){
 //        FileInfo file = FileInfo.find("fileId",fileId).firstResult();

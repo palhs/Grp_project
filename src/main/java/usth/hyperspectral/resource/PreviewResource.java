@@ -29,7 +29,7 @@ public class PreviewResource {
 
 
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response addPreview(Preview preview) {
         try {
             // Call the external POST API using the injected previewService
@@ -58,7 +58,7 @@ public class PreviewResource {
 
                 // Generate unique ID for file
                 String fileId = UUID.randomUUID().toString();
-                String uniqueFileName = fileId + "_" + fileName;
+
 
                 // Get user_id from JWT token
                 String userId = securityContext.getUserPrincipal().getName();
@@ -70,7 +70,7 @@ public class PreviewResource {
                 // Find the user in the database
                 Users user = Users.findById(Long.parseLong(userId));
 
-                fileUploadService.saveFileToDatabase(fileId, fileLocationString, uniqueFileName, user);
+                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user);
 
 
                 return Response.ok(file).build();
