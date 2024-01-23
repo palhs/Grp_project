@@ -1,6 +1,7 @@
 package usth.hyperspectral.Entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.smallrye.common.constraint.NotNull;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 public class FileInfo extends PanacheEntity {
 
     @Column(name = "file_name")
+    @NotNull
     public String fileName;
 
     @Column(name = "file_id", unique = true)
