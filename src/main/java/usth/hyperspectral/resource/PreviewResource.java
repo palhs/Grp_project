@@ -53,24 +53,24 @@ public class PreviewResource {
                 }
 
 
-                // Get the fileName
-                String fileName = fileLocation.getFileName().toString();
+//                // Get the fileName
+//                String fileName = fileLocation.getFileName().toString();
+//
+//                // Generate unique ID for file
+//                String fileId = UUID.randomUUID().toString();
+//
+//
+//                // Get user_id from JWT token
+//                String userId = securityContext.getUserPrincipal().getName();
+//
+//                if (userId == null || userId.isEmpty()) {
+//                    throw new WebApplicationException("User ID is missing in the JWT token", Response.Status.UNAUTHORIZED);
+//                }
+//
+//                // Find the user in the database
+//                Users user = Users.findById(Long.parseLong(userId));
 
-                // Generate unique ID for file
-                String fileId = UUID.randomUUID().toString();
-
-
-                // Get user_id from JWT token
-                String userId = securityContext.getUserPrincipal().getName();
-
-                if (userId == null || userId.isEmpty()) {
-                    throw new WebApplicationException("User ID is missing in the JWT token", Response.Status.UNAUTHORIZED);
-                }
-
-                // Find the user in the database
-                Users user = Users.findById(Long.parseLong(userId));
-
-                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user);
+//                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user);
 
 
                 return Response.ok(file).build();

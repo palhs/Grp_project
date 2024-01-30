@@ -69,7 +69,7 @@ public class PredictResource {
                 // Find the user in the database
                 Users user = Users.findById(Long.parseLong(userId));
 
-                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user);
+                fileUploadService.saveFileToDatabase(fileId, fileLocationString, fileName, user, "predict");
 
                 return Response.ok(file).build();
 

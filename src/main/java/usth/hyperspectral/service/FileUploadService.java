@@ -140,7 +140,7 @@ public class FileUploadService {
 
                 // Generate unique ID for file
                 String fileId = UUID.randomUUID().toString();
-                String uniqueFileName = fileId + "_" + originalFileName;
+//                String uniqueFileName = fileId + "_" + originalFileName;
 
                 fileIds.add(fileId);
                 fileNames.add(originalFileName); // Add original file name to the list
@@ -151,7 +151,7 @@ public class FileUploadService {
                         unzipAndProcessFiles(inputStream, fileId);
                     } else {
                         // Write file with originalFileName
-                        writeFile(inputStream, uniqueFileName);
+                        writeFile(inputStream, originalFileName);
                     }
                 }
 
@@ -159,11 +159,11 @@ public class FileUploadService {
                 Users user = Users.findById(Long.parseLong(userId));
 
                 // Store file path
-                String fileLocation = Paths.get(UPLOAD_DIR, uniqueFileName).toAbsolutePath().toString();
+                String fileLocation = Paths.get(UPLOAD_DIR, originalFileName).toAbsolutePath().toString();
                 fileLocations.add(fileLocation);
 
                 // Save file info to database
-                saveFileToDatabase(fileId, fileLocation, originalFileName, user);
+                saveFileToDatabase(fileId, fileLocation, originalFileName, user,"upload");
 
             } catch (WebApplicationException e) {
                 return Response.status(e.getResponse().getStatus())
@@ -275,7 +275,6 @@ public class FileUploadService {
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("hdr");
         List<String> fileLocations = new ArrayList<>();
-
         for (InputPart inputPart : inputParts) {
             try {
                 MultivaluedMap<String, String> header = inputPart.getHeaders();
@@ -318,7 +317,7 @@ public class FileUploadService {
                 fileLocations.add(fileLocation);
 
                 // Save file info to database
-                saveFileToDatabase(fileId, fileLocation, originalFileName, user);
+                saveFileToDatabase(fileId, fileLocation, originalFileName, user,"upload");
 
             } catch (WebApplicationException e) {
                 return Response.status(e.getResponse().getStatus())
@@ -374,27 +373,14 @@ public class FileUploadService {
 //        }
 //    }
 
-    private void writeFile(InputStream inputStream, String fileName) throws IOException {
+    private synchronized void writeFile(InputStream inputStream, String fileName) throws IOException {
         File customDir = new File(UPLOAD_DIR);
         File file = new File(customDir, fileName);
-
-        int count = 1;
-        while (file.exists()){
-            // Extract the name and extension of the file
-            int dotIndex = fileName.lastIndexOf('.');
-            String name = fileName.substring(0, dotIndex);
-            String extension = fileName.substring(dotIndex);
-
-            // Append a suffix to the fileName
-            String newFileName = name + "(" + count + ")" + extension;
-            file = new File(customDir,newFileName);
-            count++;
-        }
 
         byte[] buffer = null;
         try (OutputStream outputStream = Files.newOutputStream(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
              InputStream in = new BufferedInputStream(inputStream)) {
-            buffer = new byte[8 * 1024 * 1024];
+            buffer = new byte[1024 * 1024];
             int bytesRead;
             while ((bytesRead = in.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
@@ -408,7 +394,6 @@ public class FileUploadService {
             System.gc();
         }
     }
-
 
 
     private String getFileName(MultivaluedMap<String, String> header) {
@@ -425,13 +410,14 @@ public class FileUploadService {
     }
 
     @Transactional
-    public void saveFileToDatabase(String fileId, String fileLocation, String fileName,Users user) {
+    public synchronized void saveFileToDatabase(String fileId, String fileLocation, String fileName, Users user, String type) {
         try {
             FileInfo fileInfo = new FileInfo();
             fileInfo.fileId = fileId;
             fileInfo.fileLocation = fileLocation;
             fileInfo.fileName = fileName;
             fileInfo.uploadDateTime = LocalDateTime.now(); // Update date and time
+            fileInfo.type = type;
             fileInfo.setUser(user); // Set the user who uploaded the file
             fileInfo.persist();
         } catch (Exception e){
@@ -487,10 +473,9 @@ public class FileUploadService {
 
 
     private synchronized void unzipAndProcessFiles(InputStream zipInputStream, String fileId) throws IOException {
-        byte[] buffer = null;
+        byte[] buffer = new byte[1024 * 1024]; // 1MB buffer
         try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
             ZipEntry zipEntry;
-            buffer = new byte[8 * 1024 * 1024];
 
             while ((zipEntry = zis.getNextEntry()) != null) {
                 String entryName = zipEntry.getName();
@@ -504,16 +489,14 @@ public class FileUploadService {
                     while ((bytesRead = zis.read(buffer)) != -1) {
                         bos.write(buffer, 0, bytesRead);
                     }
-                } zis.closeEntry();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
             throw new WebApplicationException("Error processing zip file: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            buffer = null;
-            System.gc();
+        }
     }
-    }
+
 //    @Transactional
 //    public Response getFileById(String fileId){
 //        FileInfo file = FileInfo.find("fileId",fileId).firstResult();
@@ -532,5 +515,4 @@ public class FileUploadService {
 //            return Response.status(Response.Status.NOT_FOUND).build();
 //        }
 //    }
-
 }

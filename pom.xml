@@ -198,6 +198,8 @@
       <properties>
         <skipITs>false</skipITs>
         <quarkus.package.type>native</quarkus.package.type>
+        <quarkus.container-image.group>phananhle</quarkus.container-image.group>
+        <quarkus.container-image.name>main</quarkus.container-image.name>
       </properties>
     </profile>
   </profiles>
